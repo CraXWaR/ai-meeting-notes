@@ -1,0 +1,9 @@
+supabase
+python-dotenv
+python-docx
+langchain-groq
+langchain-core
+tenacity
+pydantic-settings
+fastapi
+uvicorn
