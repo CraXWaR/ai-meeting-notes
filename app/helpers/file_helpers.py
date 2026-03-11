@@ -1,6 +1,8 @@
 import re
 import docx
 from datetime import datetime
+import io
+import PyPDF2
 
 
 def read_docx(file_path):
@@ -21,3 +23,8 @@ def extract_date_from_filename(filename):
                 return datetime.now().date()
         return datetime(datetime.now().year, month, day).date()
     return datetime.now().date()
+
+
+def read_pdf(contents: bytes) -> str:
+    pdf = PyPDF2.PdfReader(io.BytesIO(contents))
+    return "\n".join([page.extract_text() for page in pdf.pages])

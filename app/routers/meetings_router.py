@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 from app.models.meetings_model import MeetingResponse, MeetingDetailsResponse
-from app.services.meeting_service import create_meeting, get_all_meetings, get_meeting_by_id
+from app.services.meeting_service import create_meeting, get_all_meetings, get_meeting_by_id, create_meeting_from_file
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
@@ -13,6 +13,15 @@ def post_meeting():
 @router.get("/", response_model=list[MeetingResponse])
 def get_meetings():
     return get_all_meetings()
+
+
+@router.post("/upload", response_model=MeetingResponse, status_code=201)
+async def upload_meeting(file: UploadFile = File(...)):
+    if not file.filename.endswith((".docx", ".pdf")):
+        raise HTTPException(status_code=400, detail="Only .docx and .pdf files are supported")
+
+    contents = await file.read()
+    return create_meeting_from_file(contents, file.filename)
 
 
 @router.get("/{meeting_id}", response_model=MeetingDetailsResponse)

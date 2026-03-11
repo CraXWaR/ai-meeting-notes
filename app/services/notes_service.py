@@ -3,8 +3,13 @@ from app.services.database import supabase
 from app.services.llm_service import llm_client
 from app.helpers.llm_helpers import validate_notes
 
+_cache: dict = {}
+
 
 def process_meeting(meeting_id: str) -> dict:
+    if meeting_id in _cache:
+        return _cache[meeting_id]
+
     meeting = supabase.table("meetings").select("raw_transcript").eq("id", meeting_id).execute()
 
     if not meeting.data:
@@ -43,6 +48,7 @@ def process_meeting(meeting_id: str) -> dict:
             "llm_raw": raw,
         }).execute()
 
+    _cache[meeting_id] = notes
     return notes
 
 

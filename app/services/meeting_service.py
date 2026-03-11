@@ -1,8 +1,10 @@
 import os
 import uuid
-from app.helpers.file_helpers import read_docx, extract_date_from_filename
+from fastapi import HTTPException
+from app.helpers.file_helpers import read_docx, extract_date_from_filename, read_pdf
 from app.models.meetings_model import MeetingResponse, MeetingDetailsResponse
 from app.services.database import supabase
+import tempfile
 
 
 def create_meeting():
@@ -61,3 +63,43 @@ def get_meeting_by_id(meeting_id: str) -> MeetingDetailsResponse | None:
         **meeting.data[0],
         notes="no notes"
     )
+
+
+def create_meeting_from_file(contents: bytes, filename: str) -> MeetingResponse:
+    title = os.path.splitext(filename)[0]
+
+    existing = supabase.table("meetings").select("id").eq("title", title).execute()
+    if existing.data:
+        raise HTTPException(status_code=400, detail=f"Meeting already exists: {title}")
+
+    if filename.endswith(".pdf"):
+        transcript = read_pdf(contents)
+        tmp_path = None
+    else:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".docx") as tmp:
+            tmp.write(contents)
+            tmp_path = tmp.name
+        transcript = read_docx(tmp_path)
+
+    try:
+        meeting_date = extract_date_from_filename(filename)
+        meeting_id = str(uuid.uuid4())
+
+        supabase.table("meetings").insert({
+            "id": meeting_id,
+            "title": title,
+            "meeting_date": str(meeting_date),
+            "source": "upload",
+            "raw_transcript": transcript
+        }).execute()
+
+        return MeetingResponse(
+            id=meeting_id,
+            title=title,
+            meeting_date=meeting_date,
+            source="upload",
+            has_notes=False
+        )
+    finally:
+        if tmp_path:
+            os.unlink(tmp_path)

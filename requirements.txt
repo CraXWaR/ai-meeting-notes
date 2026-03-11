@@ -7,3 +7,5 @@ tenacity
 pydantic-settings
 fastapi
 uvicorn
+python-multipart
+pypdf2
