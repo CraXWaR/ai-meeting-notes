@@ -49,6 +49,7 @@ Create a `.env` file:
 SUPABASE_URL=your_supabase_url
 SUPABASE_KEY=your_supabase_key
 GROQ_API_KEY=your_groq_api_key
+MISTRAL_API_KEY=your_mistral_api_key
 ```
 
 Start the server:
