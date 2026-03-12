@@ -6,9 +6,10 @@ from app.helpers.llm_helpers import validate_notes
 _cache: dict = {}
 
 
-def process_meeting(meeting_id: str) -> dict:
-    if meeting_id in _cache:
-        return _cache[meeting_id]
+def process_meeting(meeting_id: str, llm_name: str = "groq") -> dict:
+    cache_key = f"{meeting_id}:{llm_name}"
+    if cache_key in _cache:
+        return _cache[cache_key]
 
     meeting = supabase.table("meetings").select("raw_transcript").eq("id", meeting_id).execute()
 
@@ -16,14 +17,14 @@ def process_meeting(meeting_id: str) -> dict:
         return None
 
     transcript = meeting.data[0]["raw_transcript"]
-    raw = llm_client(transcript)
+    raw = llm_client(transcript, llm_name)
 
     if raw is None:
         raise Exception("LLM failed to generate notes.")
 
     notes = validate_notes(raw)
 
-    existing = supabase.table("notes").select("id").eq("meeting_id", meeting_id).execute()
+    existing = supabase.table("notes").select("id").eq("meeting_id", meeting_id).eq("llm", llm_name).execute()
 
     if existing.data:
         supabase.table("notes").update({
@@ -34,7 +35,8 @@ def process_meeting(meeting_id: str) -> dict:
             "topics": notes["topics"],
             "next_steps": notes["next_steps"],
             "llm_raw": raw,
-        }).eq("meeting_id", meeting_id).execute()
+            "llm": llm_name
+        }).eq("meeting_id", meeting_id).eq("llm", llm_name).execute()
     else:
         supabase.table("notes").insert({
             "id": str(uuid.uuid4()),
@@ -46,9 +48,10 @@ def process_meeting(meeting_id: str) -> dict:
             "topics": notes["topics"],
             "next_steps": notes["next_steps"],
             "llm_raw": raw,
+            "llm": llm_name
         }).execute()
 
-    _cache[meeting_id] = notes
+    _cache[cache_key] = notes
     return notes
 
 

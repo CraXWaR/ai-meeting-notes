@@ -5,8 +5,10 @@ from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
 from app.settings import settings
 from app.helpers.llm_helpers import log_retry, merge_notes, validate_notes, chunk_transcript
+from langchain_mistralai import ChatMistralAI
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", api_key=settings.GROQ_API_KEY)
+groq = ChatGroq(model="llama-3.3-70b-versatile", api_key=settings.GROQ_API_KEY)
+mistral = ChatMistralAI(model_name="mistral-large-latest", api_key=settings.MISTRAL_API_KEY)
 
 prompt_template = ChatPromptTemplate.from_template("""
 You are a meeting notes assistant. Analyze the following meeting transcript and return ONLY valid JSON with no explanation, no markdown, no extra text.
@@ -25,7 +27,11 @@ Transcript:
 {transcript}
 """)
 
-chain = prompt_template | llm
+
+def get_chain(llm_name: str = "groq"):
+    if llm_name == "mistral":
+        return prompt_template | mistral
+    return prompt_template | groq
 
 
 @retry(
@@ -34,7 +40,8 @@ chain = prompt_template | llm
     stop=stop_after_attempt(2),
     before_sleep=log_retry
 )
-def _call_llm(transcript):
+def _call_llm(transcript, llm_name: str = "groq"):
+    chain = get_chain(llm_name)
     response = chain.invoke({"transcript": transcript})
     content = response.content
     if content is None:
@@ -42,16 +49,16 @@ def _call_llm(transcript):
     return content
 
 
-def llm_client(transcript):
+def llm_client(transcript, llm_name: str = "groq"):
     try:
         chunks = chunk_transcript(transcript)
 
         if len(chunks) == 1:
-            return _call_llm(chunks[0])
+            return _call_llm(chunks[0], llm_name)
 
         all_notes = []
         for chunk in chunks:
-            raw = _call_llm(chunk)
+            raw = _call_llm(chunk, llm_name)
             all_notes.append(validate_notes(raw))
 
         return json.dumps(merge_notes(all_notes))

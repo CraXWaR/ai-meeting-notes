@@ -7,9 +7,9 @@ router = APIRouter(prefix="/meetings", tags=["Notes"])
 
 
 @router.post("/{meeting_id}/process")
-def process(meeting_id: str):
+def process(meeting_id: str, llm: str = "groq"):
     validate_id(meeting_id)
-    notes = process_meeting(meeting_id)
+    notes = process_meeting(meeting_id, llm)
 
     if notes is None:
         raise HTTPException(status_code=404, detail="Meeting not found")

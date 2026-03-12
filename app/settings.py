@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: str = ""
     SUPABASE_KEY: str = ""
     GROQ_API_KEY: str = ""
+    MISTRAL_API_KEY: str = ""
 
     class Config:
         env_file = ".env"
