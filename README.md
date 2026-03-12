@@ -83,7 +83,11 @@ curl http://localhost:8000/meetings/{meeting_id}
 
 ### Generate notes for a meeting
 ```bash
+# Default (Groq)
 curl -X POST http://localhost:8000/meetings/{meeting_id}/process
+
+# With Mistral
+curl -X POST "http://localhost:8000/meetings/{meeting_id}/process?llm=mistral"
 ```
 
 ### Generate notes for all meetings
