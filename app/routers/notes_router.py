@@ -3,7 +3,7 @@ from app.services.notes_service import process_meeting, process_all_meetings, ge
 from app.models.notes_model import NoteResponse
 from app.validators.validate_id import validate_id
 
-router = APIRouter(prefix="/meetings", tags=["Notes"])
+router = APIRouter(prefix="/notes", tags=["Notes"])
 
 
 @router.post("/{meeting_id}/process")

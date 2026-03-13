@@ -1,6 +1,9 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
+
+from app.models.google_docs_model import BulkImportRequest, BulkImportResponse
 from app.models.meetings_model import MeetingResponse, MeetingDetailsResponse
 from app.services.meeting_service import create_meeting, get_all_meetings, get_meeting_by_id, create_meeting_from_file
+from app.services.google_docs_service import import_google_docs
 
 router = APIRouter(prefix="/meetings", tags=["Meetings"])
 
@@ -31,3 +34,8 @@ def get_meeting(meeting_id: str):
     if not meeting:
         raise HTTPException(status_code=404, detail="Meeting not found")
     return meeting
+
+
+@router.post("/import/google-docs", response_model=BulkImportResponse, status_code=201)
+def import_from_google_docs(payload: BulkImportRequest):
+    return import_google_docs(payload)
