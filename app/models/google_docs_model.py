@@ -23,3 +23,13 @@ class BulkImportResponse(BaseModel):
     total: int
     succeeded: int
     failed: int
+
+
+class DriveImportRequest(BaseModel):
+    folder_url: HttpUrl
+
+
+class ImportStatus(BaseModel):
+    import_id: str
+    status: str
+    results: Optional[BulkImportResponse] = None
